@@ -11,8 +11,10 @@
 <button id="stop">Stop</button>
 <h3>Finish Line</h3>
 <div id="finishLine"></div>
-<h3>Distance From Finish Line</h3>
-<div id="distance"></div>
+<h3>Feet From Finish Line</h3>
+<div id="feet"></div>
+<h3>Miles From Finish Line</h3>
+<div id="miles"></div>
 <div id="result"></div>
 <script src="https://code.jquery.com/jquery-1.12.1.min.js" integrity="sha256-I1nTg78tSrZev3kjvfdM5A5Ak/blglGzlaZANLPDl3I=" crossorigin="anonymous"></script>
 
@@ -109,11 +111,13 @@ $("#track").on('click', function(){
     
     	// Success
         function(position){
-			 var crd = position.coords;
+			 var crd      = position.coords;
 			 var distance = getDistance(finishLineLat, finishLineLon, crd.latitude, crd.longitude, 'M');
-			 $('#distance').html(distance);
-           $('#result').append('<p>Lat: ' + crd.latitude + ' Lon: ' + crd.longitude + '</p>');
-			console.info(position);
+			 var feet     = distance * 5280;
+			 $('#miles').html(distance);
+			 $('#feet').html(feet);
+          // $('#result').append('<p>Lat: ' + crd.latitude + ' Lon: ' + crd.longitude + '</p>');
+			//console.info(position);
         },
         
         // Error
