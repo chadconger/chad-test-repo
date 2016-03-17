@@ -15,7 +15,12 @@
 <div id="feet"></div>
 <h3>Miles From Finish Line</h3>
 <div id="miles"></div>
-<div id="result"></div>
+<h3>Total Time</h3>
+<div id="totalTime"></div>
+<h3>Lap Time</h3>
+<div id="lapTime"></div>
+<h3>Laps</h3>
+<div id="laps"></div>
 <script src="https://code.jquery.com/jquery-1.12.1.min.js" integrity="sha256-I1nTg78tSrZev3kjvfdM5A5Ak/blglGzlaZANLPDl3I=" crossorigin="anonymous"></script>
 
 <script>
@@ -24,6 +29,8 @@ $(function() {
 var watch_id      = null;
 var finishLineLat = null;
 var finishLineLon = null;
+var prevLat       = null;
+var prevLon       = null;
 var totalDistance = 0;
 var totalTime     = 0;
 var totalAveSpeed = 0;
@@ -32,10 +39,36 @@ var lapDistance   = 0;
 var lapTime       = 0;
 var lapAveSpeed   = 0;
 var lapMaxSpeed   = 0;
+var currentLap    = 1;
 
 function resetLap(){
-	lapDistance   = 0;
-	lapTime       = 0;
+	$('#laps').append('<p><strong>Lap ' + currentLap + ':</strong>' + lapTime + '</p>');
+	lapDistance = 0;
+	lapTime     = 0;
+	lapTime     = 0;
+	currentLap++;
+}
+
+function startTotalTimer(){
+	totalTimerId = setTimeout(
+		function(){
+			totalTime = totalTime + 0.1;
+			$('#totalTime').html(totalTime);
+			startTotalTimer();
+		},
+		100
+	);
+}
+
+function startLapTimer(){
+	lapTimerId = setTimeout(
+		function(){
+			lapTime = lapTime + 0.1;
+			$('#lapTime').html(lapTime);
+			startLapTimer();
+		},
+		100
+	);
 }
 
 // M = miles; K = Kilometers
@@ -66,7 +99,8 @@ function reachedFinish(distance, lapTime){
 	var minTimeToReach = 15; // seconds
 	var feet           = distance * 5280; //convert miles to feet
 	
-	if(feet <= targetDistance){
+	if(feet <= targetDistance && lapTime > minTimeToReach){
+		resetLap();
 		return true;
 	}else{
 		return false;
@@ -105,19 +139,29 @@ $("#track").on('click', function(){
 		alert('Set Finish Line First');
 		return;
 	}
-  
+	// start timers
+	startTotalTimer();
+	startLapTimer();
+	
 	// Start tracking the User
     watch_id = navigator.geolocation.watchPosition(
     
     	// Success
         function(position){
-			 var crd      = position.coords;
-			 var distance = getDistance(finishLineLat, finishLineLon, crd.latitude, crd.longitude, 'M');
-			 var feet     = distance * 5280;
+			 var crd          = position.coords;
+			 var distance     = getDistance(finishLineLat, finishLineLon, crd.latitude, crd.longitude, 'M');
+			 var feet         = distance * 5280;
+			 var thisDistance = getDistance(prevLat, prevLon, crd.latitude, crd.longitude, 'M'); // get distance traveled since last check
+			 totalDistance    = totalDistance + thisDistance;
+			 lapDistance      = lapDistance + thisDistance;
+			 prevLat          = crd.latitude;
+			 prevLon          = crd.longitude;
 			 $('#miles').html(distance);
 			 $('#feet').html(feet);
-          // $('#result').append('<p>Lat: ' + crd.latitude + ' Lon: ' + crd.longitude + '</p>');
-			//console.info(position);
+         
+		 	if(reachedFinish(distance, lapTime)){
+				resetLap();
+			}
         },
         
         // Error
@@ -126,7 +170,7 @@ $("#track").on('click', function(){
         },
         
         // Settings
-        { frequency: 3000, enableHighAccuracy: true }
+        { frequency: 1000, enableHighAccuracy: true }
 	);
 
 });
@@ -136,6 +180,12 @@ $("#stop").on('click', function(){
 	
 	// Stop tracking the user
 	navigator.geolocation.clearWatch(watch_id);
+	
+	// Stop Timer
+	clearTimeout(totalTimerId);
+	totalTime = 0;
+	clearTimeout(lapTimerId);
+	lapTime = 0;
 
 });
 
