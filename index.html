@@ -6,17 +6,103 @@
 </head>
 
 <body>
+<button id="setFinishLine">Set Finish Line</button><br><br>
 <button id="track">Track</button><br><br>
 <button id="stop">Stop</button>
+<h3>Finish Line</h3>
+<div id="finishLine"></div>
+<h3>Distance From Finish Line</h3>
+<div id="distance"></div>
 <div id="result"></div>
-<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.12.1.min.js" integrity="sha256-I1nTg78tSrZev3kjvfdM5A5Ak/blglGzlaZANLPDl3I=" crossorigin="anonymous"></script>
 
 <script>
 $(function() {
 
-var watch_id = null;
+var watch_id      = null;
+var finishLineLat = null;
+var finishLineLon = null;
+var totalDistance = 0;
+var totalTime     = 0;
+var totalAveSpeed = 0;
+var totalMaxSpeed = 0;
+var lapDistance   = 0;
+var lapTime       = 0;
+var lapAveSpeed   = 0;
+var lapMaxSpeed   = 0;
 
-$("#track").live('click', function(){
+function resetLap(){
+	lapDistance   = 0;
+	lapTime       = 0;
+}
+
+// M = miles; K = Kilometers
+function getDistance(lat1, lon1, lat2, lon2, unit) {
+	var radlat1 = Math.PI * lat1/180;
+	var radlat2 = Math.PI * lat2/180;
+	var theta = lon1-lon2;
+	var radtheta = Math.PI * theta/180;
+	var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+	dist = Math.acos(dist);
+	dist = dist * 180/Math.PI;
+	dist = dist * 60 * 1.1515;
+	if (unit=="K") { dist = dist * 1.609344 }
+	if (unit=="N") { dist = dist * 0.8684 }
+	return dist;
+}
+
+function getSpeed(distance, seconds){
+	// convert seconds to hours
+	var hours = seconds * 0.00027777777;
+	var speed = distance / hours;
+	
+	return speed;
+}
+
+function reachedFinish(distance, lapTime){
+	var targetDistance = 15; // feet
+	var minTimeToReach = 15; // seconds
+	var feet           = distance * 5280; //convert miles to feet
+	
+	if(feet <= targetDistance){
+		return true;
+	}else{
+		return false;
+	}
+}
+/**************************************************/
+
+$("#setFinishLine").on('click', function(){
+	navigator.geolocation.getCurrentPosition(
+		// success
+		function(pos) {
+		  var crd       = pos.coords;
+		  finishLineLat = crd.latitude;
+		  finishLineLon = crd.longitude;
+
+		  $('#finishLine').html('Latitude : ' + crd.latitude + ' Longitude: ' + crd.longitude + ' Accuracy: ' + crd.accuracy + ' meters.');
+		},
+		
+		// error
+		function(err){
+			console.warn('ERROR(' + err.code + '): ' + err.message);
+		},
+		
+		// Settings
+        { frequency: 3000, enableHighAccuracy: true }
+	
+	);
+});
+/**************************************************/
+
+
+
+$("#track").on('click', function(){
+	
+	if(finishLine == null){
+		alert('Set Finish Line First');
+		return;
+	}
   
 	// Start tracking the User
     watch_id = navigator.geolocation.watchPosition(
@@ -24,7 +110,8 @@ $("#track").live('click', function(){
     	// Success
         function(position){
 			 var crd = position.coords;
-			 
+			 var distance = getDistance(finishLineLat, finishLineLon, crd.latitude, crd.longitude, 'M');
+			 $('#distance').html(distance);
            $('#result').append('<p>Lat: ' + crd.latitude + ' Lon: ' + crd.longitude + '</p>');
 			console.info(position);
         },
@@ -35,12 +122,13 @@ $("#track").live('click', function(){
         },
         
         // Settings
-        { frequency: 3000, enableHighAccuracy: true });
+        { frequency: 3000, enableHighAccuracy: true }
+	);
 
 });
 
 
-$("#stop").live('click', function(){
+$("#stop").on('click', function(){
 	
 	// Stop tracking the user
 	navigator.geolocation.clearWatch(watch_id);
