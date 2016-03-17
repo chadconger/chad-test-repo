@@ -42,7 +42,7 @@ var lapMaxSpeed   = 0;
 var currentLap    = 1;
 
 function resetLap(){
-	$('#laps').append('<p><strong>Lap ' + currentLap + ':</strong>' + lapTime + '</p>');
+	$('#laps').append('<p><strong>Lap ' + currentLap + ':</strong>' + lapTime + ' <strong>Lap Distance:</strong> ' + lapDistance * 5280 + ' <strong>Total Distance:</strong> ' + totalDistance * 5280 + '</p>');
 	lapDistance = 0;
 	lapTime     = 0;
 	lapTime     = 0;
@@ -100,7 +100,6 @@ function reachedFinish(distance, lapTime){
 	var feet           = distance * 5280; //convert miles to feet
 	
 	if(feet <= targetDistance && lapTime > minTimeToReach){
-		resetLap();
 		return true;
 	}else{
 		return false;
